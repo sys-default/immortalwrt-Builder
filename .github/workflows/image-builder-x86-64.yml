@@ -1,11 +1,11 @@
-name: Build 25.12.x x86-64
+name: Build immortalwrt x86-64
 on:
   workflow_dispatch:
     inputs:
       luci_version:
-        description: "输入luci版本"
+        description: "输入luci版本 格式:25.12.1 或 latest"
         required: true
-        default: "25.12.0"
+        default: "latest"
       custom_router_ip:
         description: "请设置路由器的管理地址(仅对多网口路由器有效) 格式:192.168.x.1 或 10.x.x.1"
         required: true
@@ -45,13 +45,28 @@ jobs:
           DEBIAN_FRONTEND: noninteractive
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential libncurses5-dev libncursesw5-dev zlib1g-dev gawk git gettext libssl-dev xsltproc wget unzip python3 qemu-utils genisoimage zstd
+          sudo apt-get install -y build-essential libncurses5-dev libncursesw5-dev zlib1g-dev gawk git gettext libssl-dev xsltproc wget unzip python3 qemu-utils genisoimage zstd jq
+
+      - name: Get Luci Version
+        run: |
+          if [ "${{ github.event.inputs.luci_version }}" = "latest" ]; then
+            if sudo curl --retry 3 --retry-delay 5 --fail https://sysupgrade.kyarucloud.moe/json/v1/latest.json -o latest.json; then
+              luci_version=$(cat latest.json | jq '.latest[0]')
+              sudo rm latest.json
+            else
+              echo "Failed to get latest luci version"
+              exit 1
+            fi
+          else
+            luci_version="${{ github.event.inputs.luci_version }}"
+          fi
+          echo "luci_version=$luci_version"
+          echo "luci_version=$luci_version" >> $GITHUB_ENV
+
+
 
       - name: Download and extract Image Builder
         run: |
-          luci_version="${{ github.event.inputs.luci_version }}"
-          echo "luci_version=$luci_version" >> $GITHUB_ENV
-
           file_name="immortalwrt-imagebuilder-$luci_version-x86-64.Linux-x86_64"
           echo "download target is $file_name"
           wget -O /tmp/imagebuilder.tar.zst "https://downloads.immortalwrt.org/releases/$luci_version/targets/x86/64/$file_name.tar.zst"
