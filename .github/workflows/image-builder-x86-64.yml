@@ -48,13 +48,14 @@ jobs:
       - name: Download and extract Image Builder
         run: |
           luci_version="${{ github.event.inputs.luci_version }}"
-          echo "luci_version=$luci_version" >> $GITHUB_ENV
+          echo luci_version=$luci_version >> $GITHUB_ENV
 
-          file_name='immortalwrt-imagebuilder-${luci_version}-x86-64.Linux-x86_64'
-          wget -O /tmp/imagebuilder.tar.zst https://downloads.immortalwrt.org/releases/${luci_version}/targets/x86/64/${file_name}.tar.zst
+          file_name=immortalwrt-imagebuilder-$luci_version-x86-64.Linux-x86_64
+          echo "download target is $file_name"
+          wget -O /tmp/imagebuilder.tar.zst https://downloads.immortalwrt.org/releases/$luci_version/targets/x86/64/$file_name.tar.zst
           sudo tar -I zstd -C /tmp -xvf /tmp/imagebuilder.tar.zst
-          ROOT_DIRECTORY="/tmp/$file_name"
-          echo "ROOT_DIRECTORY=$ROOT_DIRECTORY" >> $GITHUB_ENV
+          ROOT_DIRECTORY=/tmp/$file_name
+          echo ROOT_DIRECTORY=$ROOT_DIRECTORY >> $GITHUB_ENV
 
       - name: Modify .config file
         run: |
