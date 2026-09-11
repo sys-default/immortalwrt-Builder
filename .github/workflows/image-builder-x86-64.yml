@@ -88,15 +88,14 @@ jobs:
           if [[ "${{ inputs.enable_pppoe }}" == "yes" ]]; then
             if [[ -z "${{ inputs.pppoe_account }}" || -z "${{ inputs.pppoe_password }}" ]]; then
               echo "Error: PPPoE account and password must be provided when PPPoE is enabled!"
-              exit 1
-            else
-              sudo bash -c "cat > $ROOT_DIRECTORY/files/etc/uci-defaults/pppoe-settings" <<EOF
-              enable_pppoe=${{ inputs.enable_pppoe }}
-              pppoe_account=${{ inputs.pppoe_account }}
-              pppoe_password=${{ inputs.pppoe_password }}
-              EOF
+              exit 1              
             fi
           fi
+          sudo bash -c "cat > $ROOT_DIRECTORY/files/etc/uci-defaults/pppoe-settings" <<EOF
+          enable_pppoe=${{ inputs.enable_pppoe }}
+          pppoe_account=${{ inputs.pppoe_account }}
+          pppoe_password=${{ inputs.pppoe_password }}
+          EOF
 
       - name: Compile firmware
         run: |
