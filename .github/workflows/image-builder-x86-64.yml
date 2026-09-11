@@ -91,10 +91,10 @@ jobs:
               exit 1
             else
               sudo bash -c "cat > $ROOT_DIRECTORY/files/etc/uci-defaults/pppoe-settings" <<EOF
-                enable_pppoe=${{ inputs.enable_pppoe }}
-                pppoe_account=${{ inputs.pppoe_account }}
-                pppoe_password=${{ inputs.pppoe_password }}
-                EOF
+              enable_pppoe=${{ inputs.enable_pppoe }}
+              pppoe_account=${{ inputs.pppoe_account }}
+              pppoe_password=${{ inputs.pppoe_password }}
+              EOF
             fi
           fi
 
