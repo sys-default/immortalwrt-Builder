@@ -31,6 +31,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   build:
@@ -50,7 +51,7 @@ jobs:
       - name: Get Luci Version
         run: |
           if [ "${{ github.event.inputs.luci_version }}" = "latest" ]; then
-            if sudo curl --retry 3 --retry-delay 5 --fail https://sysupgrade.kyarucloud.moe/json/v1/latest.json -o latest.json; then
+            if sudo curl --retry 3 --retry-delay 5 --fail -X 'GET' -H 'Accept: application/json' https://sysupgrade.kyarucloud.moe/json/v1/latest.json -o latest.json; then
               luci_version=$(jq -r '.latest[0]' latest.json)
               sudo rm latest.json
             else
