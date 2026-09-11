@@ -29,6 +29,8 @@ on:
         description: "宽带密码 (若启用PPPoE)"
         required: false
 
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -77,7 +79,7 @@ jobs:
           sudo mkdir -p $ROOT_DIRECTORY/files/etc/uci-defaults
 
           # Copy custom setting file
-          sudo cp ${{ github.workspace }}/configs/99-custom.sh $ROOT_DIRECTORY/files/etc/uci-defaults/
+          sudo cp ${{ github.workspace }}/configs/uci-defaults.sh $ROOT_DIRECTORY/files/etc/uci-defaults/99-custom.sh
 
       - name: Create custom_router_ip
         run: |
