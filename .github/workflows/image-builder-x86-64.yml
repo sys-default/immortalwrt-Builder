@@ -51,7 +51,7 @@ jobs:
         run: |
           if [ "${{ github.event.inputs.luci_version }}" = "latest" ]; then
             if sudo curl --retry 3 --retry-delay 5 --fail https://sysupgrade.kyarucloud.moe/json/v1/latest.json -o latest.json; then
-              luci_version=$(cat latest.json | jq '.latest[0]')
+              luci_version=$(jq -r '.latest[0]' latest.json)
               sudo rm latest.json
             else
               echo "Failed to get latest luci version"
