@@ -1,0 +1,41 @@
+name: test eof
+on:
+  workflow_dispatch:
+    inputs:
+      enable_pppoe:
+        description: "是否配置PPPoE拨号信息?"
+        required: true
+        default: 'no'
+        type: choice
+        options:
+        - 'yes'
+        - 'no'
+      pppoe_account:
+        description: "宽带账号 (若启用PPPoE)"
+        required: false
+      pppoe_password:
+        description: "宽带密码 (若启用PPPoE)"
+        required: false
+
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create pppoe-settings
+        run: |
+          if [[ "${{ inputs.enable_pppoe }}" == "yes" ]]; then
+            if [[ -z "${{ inputs.pppoe_account }}" || -z "${{ inputs.pppoe_password }}" ]]; then
+              echo "Error: PPPoE account and password must be provided when PPPoE is enabled!"
+              exit 1              
+            fi
+            sudo bash -c "cat > /tmp/pppoe-settings" <<EOF
+            enable_pppoe=${{ inputs.enable_pppoe }}
+            pppoe_account=${{ inputs.pppoe_account }}
+            pppoe_password=${{ inputs.pppoe_password }}
+            EOF
+          fi

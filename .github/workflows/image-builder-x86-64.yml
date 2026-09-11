@@ -90,12 +90,13 @@ jobs:
               echo "Error: PPPoE account and password must be provided when PPPoE is enabled!"
               exit 1              
             fi
+            sudo bash -c "cat > $ROOT_DIRECTORY/files/etc/uci-defaults/pppoe-settings" <<EOF
+            enable_pppoe=${{ inputs.enable_pppoe }}
+            pppoe_account=${{ inputs.pppoe_account }}
+            pppoe_password=${{ inputs.pppoe_password }}
+            EOF
           fi
-          sudo bash -c "cat > $ROOT_DIRECTORY/files/etc/uci-defaults/pppoe-settings" <<EOF
-          enable_pppoe=${{ inputs.enable_pppoe }}
-          pppoe_account=${{ inputs.pppoe_account }}
-          pppoe_password=${{ inputs.pppoe_password }}
-          EOF
+
 
       - name: Compile firmware
         run: |
