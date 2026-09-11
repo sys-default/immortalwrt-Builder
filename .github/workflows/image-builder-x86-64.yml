@@ -112,16 +112,29 @@ jobs:
 
           echo "$(date '+%Y-%m-%d %H:%M:%S') - Build completed successfully."
 
-          echo "FILE_DATE=$(date +"%Y%m%d%H%M")" >> $GITHUB_ENV
-          # Organize files
-          sudo mkdir -p /tmp/bin_firmware
-          sudo find bin -type f -exec sudo cp {} /tmp/bin_firmware/ \;
+      - name: Create info
+        run: |
+          cat > ${{ github.workspace }}/router-info.md <<EOF
+          ## 📡 路由器后台信息
+          <a href="https://wkdaily.cpolar.cn/archives/1">
+           <img src="https://img.shields.io/badge/若下载慢可套用国内加速站下载-FC7C0D?logo=github&logoColor=fff&labelColor=000&style=for-the-badge"/>
+          </a>
+          
+          - 🏠 **后台地址**: ${{ github.event.inputs.custom_router_ip }}
+          - 👤 **用户名**: root
+          - 🔑 **密码**: 无
+          EOF
 
-      - name: Upload firmware
-        uses: actions/upload-artifact@v4
+      - name: Upload ImmortWrt as release assets
+        uses: softprops/action-gh-release@v3
         with:
-          name: ImmortalWrt-firmware-${{ env.luci_version }}-${{ env.FILE_DATE }}
-          path: /tmp/bin_firmware
+          tag_name: Autobuild-x86-64
+          body_path: ${{ github.workspace }}/router-info.md
+          files: |
+            $ROOT_DIRECTORY/bin/targets/x86/64/*squashfs-combined-efi.img.gz
+          token: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Delete workflow runs
         uses: Mattraks/delete-workflow-runs@main
