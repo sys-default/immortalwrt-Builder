@@ -34,8 +34,8 @@ jobs:
               exit 1              
             fi
             sudo bash -c "cat > /tmp/pppoe-settings" <<EOF
-            enable_pppoe=${{ inputs.enable_pppoe }}
-            pppoe_account=${{ inputs.pppoe_account }}
-            pppoe_password=${{ inputs.pppoe_password }}
-            EOF
+          enable_pppoe=${{ inputs.enable_pppoe }}
+          pppoe_account=${{ inputs.pppoe_account }}
+          pppoe_password=${{ inputs.pppoe_password }}
+          EOF
           fi
