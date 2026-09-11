@@ -20,6 +20,7 @@ fi
 PPPOE_SETTINGS_FILE="/etc/config/uci-defaults/pppoe-settings"
 if [ ! -f "$PPPOE_SETTINGS_FILE" ]; then
     echo "PPPoE settings file not found. Skipping." >>$LOGFILE
+    enable_pppoe="no"
 else
     # 读取pppoe信息($enable_pppoe、$pppoe_account、$pppoe_password)
     . "$PPPOE_SETTINGS_FILE"
