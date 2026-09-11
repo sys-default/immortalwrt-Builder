@@ -1,0 +1,130 @@
+name: Build 25.12.x x86-64
+on:
+  workflow_dispatch:
+    inputs:
+      luci_version:
+        description: "输入luci版本"
+        required: true
+        default: "25.12.0"
+      custom_router_ip:
+        description: "请设置路由器的管理地址(仅对多网口路由器有效) 格式:192.168.x.1 或 10.x.x.1"
+        required: true
+        default: "192.168.100.1"
+      profile:
+        description: '请输入要编译固件大小 单位(MB)'
+        required: true
+        default: '2048'
+      enable_pppoe:
+        description: "是否配置PPPoE拨号信息?"
+        required: true
+        default: 'no'
+        type: choice
+        options:
+        - 'yes'
+        - 'no'
+      pppoe_account:
+        description: "宽带账号 (若启用PPPoE)"
+        required: false
+      pppoe_password:
+        description: "宽带密码 (若启用PPPoE)"
+        required: false
+
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Initialization environment
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential libncurses5-dev libncursesw5-dev zlib1g-dev gawk git gettext libssl-dev xsltproc wget unzip python3 qemu-utils genisoimage zstd
+
+      - name: Download and extract Image Builder
+        run: |
+          luci_version="${{ github.event.inputs.luci_version }}"
+          echo "luci_version=$luci_version" >> $GITHUB_ENV
+
+          file_name='immortalwrt-imagebuilder-${luci_version}-x86-64.Linux-x86_64'
+          wget -O /tmp/imagebuilder.tar.zst https://downloads.immortalwrt.org/releases/${luci_version}/targets/x86/64/${file_name}.tar.zst
+          sudo tar -I zstd -C /tmp -xvf /tmp/imagebuilder.tar.zst
+          echo "ROOT_DIRECTORY=/tmp/$ROOT_DIRECTORY" >> $GITHUB_ENV
+
+      - name: Modify .config file
+        run: |
+          CONFIG_FILE="$ROOT_DIRECTORY/.config"
+          # Disable iso and virtual disk image generation for x86
+          sudo sed -i 's/^CONFIG_ISO_IMAGES=y/# CONFIG_ISO_IMAGES is not set/' $CONFIG_FILE
+          sudo sed -i 's/^CONFIG_QCOW2_IMAGES=y/# CONFIG_QCOW2_IMAGES is not set/' $CONFIG_FILE
+          sudo sed -i 's/^CONFIG_VDI_IMAGES=y/# CONFIG_VDI_IMAGES is not set/' $CONFIG_FILE
+          sudo sed -i 's/^CONFIG_VMDK_IMAGES=y/# CONFIG_VMDK_IMAGES is not set/' $CONFIG_FILE
+          sudo sed -i 's/^CONFIG_VHDX_IMAGES=y/# CONFIG_VHDX_IMAGES is not set/' $CONFIG_FILE
+
+
+      - name: Copy files
+        run: |
+          # Creator folders
+          sudo mkdir -p $ROOT_DIRECTORY/files/etc/uci-defaults
+
+          # Copy custom setting file
+          sudo cp ${{ github.workspace }}/configs/99-custom.sh $ROOT_DIRECTORY/files/etc/uci-defaults/
+
+      - name: Create custom_router_ip
+        run: |
+          custom_router_ip="${{ github.event.inputs.custom_router_ip }}"
+          sudo cat << EOF > $ROOT_DIRECTORY/files/etc/uci-defaults/custom_router_ip
+          custom_router_ip=${custom_router_ip}
+          EOF
+
+      - name: Create pppoe-settings
+        run: |
+          if [[ "${{ inputs.enable_pppoe }}" == "yes" ]]; then
+            if [[ -z "${{ inputs.pppoe_account }}" || -z "${{ inputs.pppoe_password }}" ]]; then
+              echo "Error: PPPoE account and password must be provided when PPPoE is enabled!"
+              exit 1
+            else
+              cat << EOF > $ROOT_DIRECTORY/files/etc/uci-defaults/pppoe-settings
+                enable_pppoe=${{ inputs.enable_pppoe }}
+                pppoe_account=${{ inputs.pppoe_account }}
+                pppoe_password=${{ inputs.pppoe_password }}
+                EOF
+            fi
+          fi
+
+      - name: Compile firmware
+        run: |
+          profile="${{ github.event.inputs.profile }}"
+          echo "编译固件大小为: $profile MB"
+          packages=$(cat ${{ github.workspace }}/configs/packages.list | tr '\n' ' ')
+          echo "Building for profile: $profile"
+
+          cd $ROOT_DIRECTORY
+          sudo make image PROFILE="generic" PACKAGES="$packages" FILES="./files" ROOTFS_PARTSIZE=$profile
+          if [ $? -ne 0 ]; then
+              echo "$(date '+%Y-%m-%d %H:%M:%S') - Error: Build failed!"
+              exit 1
+          fi
+
+          echo "$(date '+%Y-%m-%d %H:%M:%S') - Build completed successfully."
+
+          echo "FILE_DATE=$(date +"%Y%m%d%H%M")" >> $GITHUB_ENV
+          # Organize files
+          sudo mkdir -p /tmp/bin_firmware
+          sudo find bin -type f -exec sudo cp {} /tmp/bin_firmware/ \;
+
+      - name: Upload firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: ImmortalWrt-firmware-${{ env.luci_version }}-${{ env.FILE_DATE }}
+          path: /tmp/bin_firmware
+
+      - name: Delete workflow runs
+        uses: Mattraks/delete-workflow-runs@main
+        with:
+          retain_days: 0
+          keep_minimum_runs: 2
