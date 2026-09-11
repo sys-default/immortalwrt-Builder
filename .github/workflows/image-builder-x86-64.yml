@@ -79,7 +79,7 @@ jobs:
       - name: Create custom_router_ip
         run: |
           custom_router_ip="${{ github.event.inputs.custom_router_ip }}"
-          sudo bash -c "cat > $ROOT_DIRECTORY/files/etc/uci-defaults/custom_router_ip.sh" <<EOF
+          sudo bash -c "cat > $ROOT_DIRECTORY/files/etc/uci-defaults/custom_router_ip" <<EOF
           custom_router_ip=${custom_router_ip}
           EOF
 
@@ -90,7 +90,7 @@ jobs:
               echo "Error: PPPoE account and password must be provided when PPPoE is enabled!"
               exit 1
             else
-              sudo bash -c "cat > $ROOT_DIRECTORY/files/etc/uci-defaults/pppoe-settings.sh" <<EOF
+              sudo bash -c "cat > $ROOT_DIRECTORY/files/etc/uci-defaults/pppoe-settings" <<EOF
                 enable_pppoe=${{ inputs.enable_pppoe }}
                 pppoe_account=${{ inputs.pppoe_account }}
                 pppoe_password=${{ inputs.pppoe_password }}
