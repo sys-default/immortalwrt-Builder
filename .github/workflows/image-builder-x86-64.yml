@@ -66,6 +66,9 @@ jobs:
           sudo sed -i 's/^CONFIG_VDI_IMAGES=y/# CONFIG_VDI_IMAGES is not set/' $CONFIG_FILE
           sudo sed -i 's/^CONFIG_VMDK_IMAGES=y/# CONFIG_VMDK_IMAGES is not set/' $CONFIG_FILE
           sudo sed -i 's/^CONFIG_VHDX_IMAGES=y/# CONFIG_VHDX_IMAGES is not set/' $CONFIG_FILE
+          
+          profile="${{ github.event.inputs.profile }}"
+          sudo sed -i "s/^CONFIG_TARGET_ROOTFS_PARTSIZE=.*/CONFIG_TARGET_ROOTFS_PARTSIZE=$profile/" $CONFIG_FILE
 
 
       - name: Copy files
@@ -100,13 +103,11 @@ jobs:
 
       - name: Compile firmware
         run: |
-          profile="${{ github.event.inputs.profile }}"
-          echo "编译固件大小为: $profile MB"
           packages=$(cat ${{ github.workspace }}/configs/packages.list | tr '\n' ' ')
           echo "Building for profile: $profile"
 
           cd $ROOT_DIRECTORY
-          sudo make image PROFILE="generic" PACKAGES="$packages" FILES="./files" ROOTFS_PARTSIZE=$profile
+          sudo make image PROFILE="generic" PACKAGES="$packages" FILES="./files"
           if [ $? -ne 0 ]; then
               echo "$(date '+%Y-%m-%d %H:%M:%S') - Error: Build failed!"
               exit 1
