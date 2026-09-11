@@ -91,10 +91,10 @@ jobs:
               exit 1              
             fi
             sudo bash -c "cat > $ROOT_DIRECTORY/files/etc/uci-defaults/pppoe-settings" <<EOF
-            enable_pppoe=${{ inputs.enable_pppoe }}
-            pppoe_account=${{ inputs.pppoe_account }}
-            pppoe_password=${{ inputs.pppoe_password }}
-            EOF
+          enable_pppoe=${{ inputs.enable_pppoe }}
+          pppoe_account=${{ inputs.pppoe_account }}
+          pppoe_password=${{ inputs.pppoe_password }}
+          EOF
           fi
 
 
@@ -126,6 +126,12 @@ jobs:
           - 👤 **用户名**: root
           - 🔑 **密码**: 无
           EOF
+
+      - name: file find
+        run: |
+          echo $(ls -lha $ROOT_DIRECTORY/bin)
+
+          echo $(ls -lha $ROOT_DIRECTORY/bin/targets/x86/64/)
 
       - name: Upload ImmortWrt as release assets
         uses: softprops/action-gh-release@v3
