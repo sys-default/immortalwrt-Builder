@@ -13,7 +13,7 @@ on:
       profile:
         description: '请输入要编译固件大小 单位(MB)'
         required: true
-        default: '2048'
+        default: '1024'
       enable_pppoe:
         description: "是否配置PPPoE拨号信息?"
         required: true
@@ -93,13 +93,13 @@ jobs:
           # Creator folders
           sudo mkdir -p $ROOT_DIRECTORY/files/etc/uci-defaults
           # Copy custom setting file
-          uci-defaults=$ROOT_DIRECTORY/files/etc/uci-defaults/99-custom
-          sudo cp ${{ github.workspace }}/configs/uci-defaults.sh $uci-defaults
+          uci_defaults_sh=$ROOT_DIRECTORY/files/etc/uci-defaults/99-custom
+          sudo cp ${{ github.workspace }}/configs/uci-defaults.sh $uci_defaults_sh
 
       - name: Modify lan ip address
         run: |
           lan_ip_address="${{ github.event.inputs.lan_ip_address }}"
-          sudo sed -i 's/^# lan_ip_address=.*/lan_ip_address="$lan_ip_address"/' $uci-defaults
+          sudo sed -i 's/^# lan_ip_address=.*/lan_ip_address="$lan_ip_address"/' $uci_defaults_sh
 
       - name: Modify pppoe settings
         run: |
@@ -110,8 +110,8 @@ jobs:
             fi
             pppoe_username=${{ inputs.pppoe_username }}
             pppoe_password=${{ inputs.pppoe_password }}
-            sudo sed -i 's/^# pppoe_username=.*/pppoe_username="$pppoe_username"/' $uci-defaults
-            sudo sed -i 's/^# pppoe_password=.*/pppoe_password="$pppoe_password"/' $uci-defaults
+            sudo sed -i 's/^# pppoe_username=.*/pppoe_username="$pppoe_username"/' $uci_defaults_sh
+            sudo sed -i 's/^# pppoe_password=.*/pppoe_password="$pppoe_password"/' $uci_defaults_sh
           fi
 
       - name: Compile firmware
