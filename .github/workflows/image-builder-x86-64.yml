@@ -94,6 +94,7 @@ jobs:
           sudo mkdir -p $ROOT_DIRECTORY/files/etc/uci-defaults
           # Copy custom setting file
           uci_defaults_sh=$ROOT_DIRECTORY/files/etc/uci-defaults/99-custom
+          echo "uci_defaults_sh=$uci_defaults_sh" >> $GITHUB_ENV
           sudo cp ${{ github.workspace }}/configs/uci-defaults.sh $uci_defaults_sh
 
       - name: Modify lan ip address
