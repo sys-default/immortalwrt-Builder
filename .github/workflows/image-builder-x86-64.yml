@@ -6,7 +6,7 @@ on:
         description: "输入luci版本 格式:25.12.1 或 latest"
         required: true
         default: "latest"
-      custom_router_ip:
+      lan_ip_address:
         description: "请设置路由器的管理地址(仅对多网口路由器有效) 格式:192.168.x.1 或 10.x.x.1"
         required: true
         default: "192.168.100.1"
@@ -22,7 +22,7 @@ on:
         options:
         - 'yes'
         - 'no'
-      pppoe_account:
+      pppoe_username:
         description: "宽带账号 (若启用PPPoE)"
         required: false
       pppoe_password:
@@ -88,36 +88,31 @@ jobs:
           profile="${{ github.event.inputs.profile }}"
           sudo sed -i "s/^CONFIG_TARGET_ROOTFS_PARTSIZE=.*/CONFIG_TARGET_ROOTFS_PARTSIZE=$profile/" $CONFIG_FILE
 
-
       - name: Copy files
         run: |
           # Creator folders
           sudo mkdir -p $ROOT_DIRECTORY/files/etc/uci-defaults
-
           # Copy custom setting file
-          sudo cp ${{ github.workspace }}/configs/uci-defaults.sh $ROOT_DIRECTORY/files/etc/uci-defaults/99-custom.sh
+          uci-defaults=$ROOT_DIRECTORY/files/etc/uci-defaults/99-custom
+          sudo cp ${{ github.workspace }}/configs/uci-defaults.sh $uci-defaults
 
-      - name: Create custom_router_ip
+      - name: Modify lan ip address
         run: |
-          custom_router_ip="${{ github.event.inputs.custom_router_ip }}"
-          sudo bash -c "cat > $ROOT_DIRECTORY/files/etc/uci-defaults/custom_router_ip" <<EOF
-          custom_router_ip=${custom_router_ip}
-          EOF
+          lan_ip_address="${{ github.event.inputs.lan_ip_address }}"
+          sudo sed -i 's/^# lan_ip_address=.*/lan_ip_address="$lan_ip_address"/' $uci-defaults
 
-      - name: Create pppoe-settings
+      - name: Modify pppoe settings
         run: |
           if [[ "${{ inputs.enable_pppoe }}" == "yes" ]]; then
-            if [[ -z "${{ inputs.pppoe_account }}" || -z "${{ inputs.pppoe_password }}" ]]; then
-              echo "Error: PPPoE account and password must be provided when PPPoE is enabled!"
+            if [[ -z "${{ inputs.pppoe_username }}" || -z "${{ inputs.pppoe_password }}" ]]; then
+              echo "Error: PPPoE username and password must be provided when PPPoE is enabled!"
               exit 1              
             fi
-            sudo bash -c "cat > $ROOT_DIRECTORY/files/etc/uci-defaults/pppoe-settings" <<EOF
-          enable_pppoe=${{ inputs.enable_pppoe }}
-          pppoe_account=${{ inputs.pppoe_account }}
-          pppoe_password=${{ inputs.pppoe_password }}
-          EOF
+            pppoe_username=${{ inputs.pppoe_username }}
+            pppoe_password=${{ inputs.pppoe_password }}
+            sudo sed -i 's/^# pppoe_username=.*/pppoe_username="$pppoe_username"/' $uci-defaults
+            sudo sed -i 's/^# pppoe_password=.*/pppoe_password="$pppoe_password"/' $uci-defaults
           fi
-
 
       - name: Compile firmware
         run: |
@@ -138,7 +133,7 @@ jobs:
           cat > ${{ github.workspace }}/router-info.md <<EOF
           ## 📡 路由器后台信息
           
-          - 🏠 **后台地址**: ${{ github.event.inputs.custom_router_ip }}
+          - 🏠 **后台地址**: ${{ github.event.inputs.lan_ip_address }}
           - 👤 **用户名**: root
           - 🔑 **密码**: 无
           EOF
