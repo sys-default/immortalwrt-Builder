@@ -100,7 +100,7 @@ jobs:
       - name: Modify lan ip address
         run: |
           lan_ip_address="${{ github.event.inputs.lan_ip_address }}"
-          sudo sed -i 's/^# lan_ip_address=.*/lan_ip_address="$lan_ip_address"/' $uci_defaults_sh
+          sudo sed -i "s/^# lan_ip_address=.*/lan_ip_address=$lan_ip_address/" $uci_defaults_sh
 
       - name: Modify pppoe settings
         run: |
@@ -111,8 +111,8 @@ jobs:
             fi
             pppoe_username=${{ inputs.pppoe_username }}
             pppoe_password=${{ inputs.pppoe_password }}
-            sudo sed -i 's/^# pppoe_username=.*/pppoe_username="$pppoe_username"/' $uci_defaults_sh
-            sudo sed -i 's/^# pppoe_password=.*/pppoe_password="$pppoe_password"/' $uci_defaults_sh
+            sudo sed -i "s/^# pppoe_username=.*/pppoe_username=$pppoe_username/" $uci_defaults_sh
+            sudo sed -i "s/^# pppoe_password=.*/pppoe_password=$pppoe_password/" $uci_defaults_sh
           fi
 
       - name: Compile firmware
