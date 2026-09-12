@@ -41,12 +41,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+
       - name: Initialization environment
         env:
           DEBIAN_FRONTEND: noninteractive
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential libncurses5-dev libncursesw5-dev zlib1g-dev gawk git gettext libssl-dev xsltproc wget unzip python3 qemu-utils genisoimage zstd jq
+
 
       - name: Get Luci Version
         run: |
@@ -65,7 +67,6 @@ jobs:
           echo "luci_version=$luci_version" >> $GITHUB_ENV
 
 
-
       - name: Download and extract Image Builder
         run: |
           file_name="immortalwrt-imagebuilder-$luci_version-x86-64.Linux-x86_64"
@@ -74,6 +75,7 @@ jobs:
           sudo tar -I zstd -C /tmp -xvf /tmp/imagebuilder.tar.zst
           ROOT_DIRECTORY="/tmp/$file_name"
           echo "ROOT_DIRECTORY=$ROOT_DIRECTORY" >> $GITHUB_ENV
+
 
       - name: Modify .config file
         run: |
@@ -88,6 +90,7 @@ jobs:
           profile="${{ github.event.inputs.profile }}"
           sudo sed -i "s/^CONFIG_TARGET_ROOTFS_PARTSIZE=.*/CONFIG_TARGET_ROOTFS_PARTSIZE=$profile/" $CONFIG_FILE
 
+
       - name: Copy files
         run: |
           # Creator folders
@@ -97,10 +100,12 @@ jobs:
           echo "uci_defaults_sh=$uci_defaults_sh" >> $GITHUB_ENV
           sudo cp ${{ github.workspace }}/configs/uci-defaults.sh $uci_defaults_sh
 
+
       - name: Modify lan ip address
         run: |
           lan_ip_address="${{ github.event.inputs.lan_ip_address }}"
           sudo sed -i "s/^# lan_ip_address=.*/lan_ip_address=$lan_ip_address/" $uci_defaults_sh
+
 
       - name: Modify pppoe settings
         run: |
@@ -115,9 +120,10 @@ jobs:
             sudo sed -i "s/^# pppoe_password=.*/pppoe_password=$pppoe_password/" $uci_defaults_sh
           fi
 
+
       - name: Compile firmware
         run: |
-          packages=$(cat ${{ github.workspace }}/configs/packages.list | tr '\n' ' ')
+          packages=$(sed 's/#.*$//' ${{ github.workspace }}/configs/packages.list | grep -vE '^\s*$' | tr '\n' ' ' | sed 's/[[:space:]]\+/ /g;s/^ *//;s/ *$//')
           echo "Building for profile: $profile"
 
           cd $ROOT_DIRECTORY
@@ -129,6 +135,7 @@ jobs:
 
           echo "$(date '+%Y-%m-%d %H:%M:%S') - Build completed successfully."
 
+
       - name: Create info
         run: |
           cat > ${{ github.workspace }}/router-info.md <<EOF
@@ -136,8 +143,9 @@ jobs:
           
           - 🏠 **后台地址**: ${{ github.event.inputs.lan_ip_address }}
           - 👤 **用户名**: root
-          - 🔑 **密码**: 无
+          - 🔑 **密码**: 无 
           EOF
+
 
       - name: Upload ImmortWrt as release assets
         uses: softprops/action-gh-release@v3
@@ -149,6 +157,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 
       - name: Delete workflow runs
         uses: Mattraks/delete-workflow-runs@main
