@@ -7,8 +7,8 @@
 使用immortalwrt放出的 ImageBuilder 工具进行固件构建
 
 ## 基本用法步骤
-1. fork本项目
-2. 在fork后的项目中 点击【action】 找到需要的工作流后 run-workflow
+1. Use this template, 或者 fork本项目到你自己的repositories中
+2. 在你自己的项目中 点击【action】 找到需要的工作流后 run-workflow
 
 ## 该固件默认属性？(必读)
 - 该固件刷入【单网口设备】默认采用DHCP模式,自动获得ip。类似NAS的做法
