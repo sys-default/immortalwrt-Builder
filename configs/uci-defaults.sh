@@ -78,7 +78,12 @@ elif [ "$count" -gt 1 ]; then
         uci set network.wan.proto=pppoe
         uci set network.wan.username="$pppoe_username"
         uci set network.wan.password="$pppoe_password"
+        uci set network.wan.keepalive='5 5'
+        # 配置WAN6
         uci delete network.wan6
+        uci set dhcp.lan.dhcpv6='server'
+        uci set dhcp.lan.ra='server'
+        uci commit dhcp
         echo "PPPoE config done." >>$LOGFILE
     else
         uci set network.wan.proto='dhcp'
