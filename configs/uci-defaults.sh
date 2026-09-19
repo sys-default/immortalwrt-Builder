@@ -70,7 +70,6 @@ elif [ "$count" -gt 1 ]; then
             uci -q add network device
             uci set network.@device[-1].type='bridge'
             uci set network.@device[-1].name='br-lan'
-            uci set network.@device[-1].igmp_snooping='1'
             # 添加LAN接口端口
             for port in $lan_ifnames; do
                 uci add_list "network.@device[-1].ports"="$port"
