@@ -46,7 +46,7 @@ elif [ "$count" -gt 1 ]; then
         # 查找 br-lan 设备 section, 存在则删除
         section=$(uci show network | awk -F '[.=]' '/\.@?device\[[0-9]+\]\.name=.br-lan.$/ {print $2; exit}')
         if [ -z "$section" ]; then
-            echo "error: cannot find device 'br-lan'." >>$LOGFILE
+            echo "No br-lan device found." >>$LOGFILE
         else
             # 删除原有 br-lan 设备
             uci delete "network.$section"
@@ -77,6 +77,7 @@ elif [ "$count" -gt 1 ]; then
             done        
         else
             # 删除原有ports
+            echo "Editing br-lan ports." >>$LOGFILE
             uci -q delete "network.$section.ports"
             # 添加LAN接口端口
             for port in $lan_ifnames; do
