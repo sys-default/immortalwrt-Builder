@@ -27,12 +27,6 @@ echo "Interface count: $count" >>$LOGFILE
 board_name=$(cat /tmp/sysinfo/board_name 2>/dev/null || echo "unknown")
 echo "Board detected: $board_name" >>$LOGFILE
 
-# 默认第一个接口为WAN，其余为LAN
-wan_ifname=$(echo "$ifnames" | awk '{print $1}')
-lan_ifnames=$(echo "$ifnames" | cut -d ' ' -f2-)
-echo "Using default mapping: WAN=$wan_ifname LAN=$lan_ifnames" >>"$LOGFILE"
-
-
 # 3. 配置网络
 if [ "$count" -eq 1 ]; then
     # 单网口设备，DHCP模式
@@ -43,23 +37,58 @@ if [ "$count" -eq 1 ]; then
     uci delete network.lan.dns
     uci commit network
 elif [ "$count" -gt 1 ]; then
-    # 多网口设备配置
-    # 配置WAN
-    uci set network.wan=interface
-    uci set network.wan.device="$wan_ifname"
+    # 默认第一个接口为WAN，其余为LAN
+    if [ "$count" -eq 2 ]; then
+        wan_ifname=$(echo "$ifnames" | awk '{print $1}')
+        lan_ifname=$(echo "$ifnames" | awk '{print $2}')
 
-    # 查找 br-lan 设备 section
-    section=$(uci show network | awk -F '[.=]' '/\.@?device\[\d+\]\.name=.br-lan.$/ {print $2; exit}')
-    if [ -z "$section" ]; then
-        echo "error: cannot find device 'br-lan'." >>$LOGFILE
-    else
-        # 删除原有ports
-        uci -q delete "network.$section.ports"
+        uci set network.wan.device="$wan_ifname"
+        # 查找 br-lan 设备 section, 存在则删除
+        section=$(uci show network | awk -F '[.=]' '/\.@?device\[[0-9]+\]\.name=.br-lan.$/ {print $2; exit}')
+        if [ -z "$section" ]; then
+            echo "error: cannot find device 'br-lan'." >>$LOGFILE
+        else
+            # 删除原有 br-lan 设备
+            uci delete "network.$section"
+        fi
+        # 配置LAN口
+        uci set network.lan.device="$lan_ifname"
+
+    elif [ "$count" -gt 2 ]; then
+        wan_ifname=$(echo "$ifnames" | awk '{print $1}')
+        lan_ifnames=$(echo "$ifnames" | cut -d ' ' -f2-)
+        # 多网口设备配置
+        # 配置WAN
+        uci set network.wan=interface
+        uci set network.wan.device="$wan_ifname"
+
+        # 查找 br-lan 设备 section
+        section=$(uci show network | awk -F '[.=]' '/\.@?device\[[0-9]+\]\.name=.br-lan.$/ {print $2; exit}')
+        if [ -z "$section" ]; then
+            # 创建 br-lan 设备
+            echo "Creating device 'br-lan'." >>$LOGFILE
+            uci -q add network device
+            uci set network.@device[-1].type='bridge'
+            uci set network.@device[-1].name='br-lan'
+            # 添加LAN接口端口
+            for port in $lan_ifnames; do
+                uci add_list "network.@device[-1].ports"="$port"
+            done        
+        else
+            # 删除原有ports
+            uci -q delete "network.$section.ports"
+            # 添加LAN接口端口
+            for port in $lan_ifnames; do
+                uci add_list "network.$section.ports"="$port"
+            done
+        fi
         # 添加LAN接口端口
         for port in $lan_ifnames; do
             uci add_list "network.$section.ports"="$port"
         done
         echo "Updated br-lan ports: $lan_ifnames" >>$LOGFILE
+
+        uci set network.lan.device="br-lan"
     fi
 
     # LAN口设置静态IP
@@ -72,7 +101,6 @@ elif [ "$count" -gt 1 ]; then
     fi
 
     # 配置WAN口
-
     # PPPoE设置
     if [ -n "$pppoe_username" -a "$pppoe_password" ]; then
         uci set network.wan.proto=pppoe
